@@ -156,15 +156,43 @@ export const getTeamById = async (req: Request, res: Response) => {
 
 export const updateTeam = async (req: Request, res: Response) => {
   try {
-    const team = await Team.findByPk(req.params.id);
-    if (!team) return res.status(404).json({ error: 'Team not found' });
+    const team = await Team.findByPk(req.params.id, {
+      include: [Project, User],
+    });
 
-    await team.update(req.body);
-    res.status(200).json(team);
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    const { teamName, projectId, description, userIds } = req.body;
+
+    // Update team basic fields
+    await team.update({ teamName, projectId });
+
+    // Update project description if projectId is provided
+    if (projectId && description) {
+      const project = await Project.findByPk(projectId);
+      if (project) {
+        await project.update({ description });
+      }
+    }
+
+    // Update team users (many-to-many)
+    if (Array.isArray(userIds)) {
+      await team.$set('users', userIds); // This updates TeamUser table
+    }
+
+    const updatedTeam = await Team.findByPk(req.params.id, {
+      include: [Project, User],
+    });
+
+    res.status(200).json(updatedTeam);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Error updating team' });
   }
 };
+
 
 export const deleteTeam = async (req: Request, res: Response) => {
   try {

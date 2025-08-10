@@ -2,11 +2,53 @@
 import { Request, Response } from 'express';
 import * as ChildTicketService from '../services/childticket.service';
 
+// export const createChildTicket = async (req: Request, res: Response) => {
+//   try {
+//     const parentId = parseInt(req.params.parentId);
+//     const ticket = await ChildTicketService.createChildTicket(parentId, req.body);
+//     res.status(201).json(ticket);
+//   } catch (err: any) {
+//     res.status(400).json({ message: err.message });
+//   }
+// };
+
+
 export const createChildTicket = async (req: Request, res: Response) => {
   try {
     const parentId = parseInt(req.params.parentId);
-    const ticket = await ChildTicketService.createChildTicket(parentId, req.body);
-    res.status(201).json(ticket);
+    const {
+      title,
+      description,
+      type,
+      priority,
+      status,
+      sprint,
+      startdate,
+      reportingmanager,
+      enddate,
+      comments,
+      ownedby
+    } = req.body;
+
+    const attachment = req.file?.filename ?? undefined;
+
+    const ticket = await ChildTicketService.createChildTicket(parentId, {
+      title,
+      description,
+      type,
+      priority,
+      status,
+      sprint,
+      reportingmanager,
+      startdate,
+      enddate,
+      comments,
+      ownedby,
+      attachment
+    });
+
+    const fullTicket = await ticket.reload(); // ensure all fields are loaded
+    res.status(201).json(fullTicket);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
   }

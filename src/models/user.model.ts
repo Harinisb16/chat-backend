@@ -24,6 +24,9 @@ export class User extends Model {
   @Column(DataType.STRING)
   username!: string;
 
+    @Column(DataType.STRING)
+  email!: string;
+
   @ForeignKey(() => Role)
   @Column(DataType.INTEGER)
   roleId!: number;
@@ -31,8 +34,8 @@ export class User extends Model {
   @BelongsTo(() => Role)
   role!: Role;
 
-  @Column(DataType.STRING)
-  reportingManager!: string;
+  // @Column(DataType.STRING)
+  // reportingManager!: string;
 
   @Column(DataType.STRING)
   project!: string;
@@ -40,7 +43,9 @@ export class User extends Model {
 @BelongsToMany(() => Team, () => TeamUser)
 teams!: Team[];
 
+
 }
+
 
 
 

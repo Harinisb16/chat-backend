@@ -34,6 +34,10 @@ export class ChildTicket extends Model {
 
   @Column(DataType.DATE)
   enddate!: Date;
+  
+  @Column(DataType.STRING)
+  reportingmanager!: string;
+
 
   @Column(DataType.STRING)
   comments!: string;
@@ -41,13 +45,31 @@ export class ChildTicket extends Model {
   @Column(DataType.STRING)
   ownedby!: string;
 
-  @Column(DataType.STRING)
-  attachment!: string;
+  @Column({
+  type: DataType.STRING,
+  allowNull: true,
+})
+attachment?: string;
 
-  @ForeignKey(() => Ticket)
-  @Column(DataType.INTEGER)
-  parentId!: number;
 
-  @BelongsTo(() => Ticket)
-  parentTicket!: Ticket;
+  // @ForeignKey(() => Ticket)
+  // @Column(DataType.INTEGER)
+  // parentId!: number;
+
+  // @BelongsTo(() => Ticket)
+  // parentTicket!: Ticket;
+
+//   @ForeignKey(() => Ticket)
+// @Column(DataType.INTEGER)
+// parentId!: number;
+
+// @BelongsTo(() => Ticket, { foreignKey: 'parentId' })
+// parentTicket!: Ticket;
+@ForeignKey(() => Ticket)
+@Column(DataType.INTEGER)
+parentId!: number;
+
+@BelongsTo(() => Ticket, { foreignKey: 'parentId', as: 'parentTicket' })
+parentTicket!: Ticket;
+
 }

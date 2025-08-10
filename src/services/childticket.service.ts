@@ -1,6 +1,7 @@
-// src/services/childticket.service.ts
+
 import { ChildTicket } from '../models/childticket.model';
 import { Ticket } from '../models/ticket.model';
+
 
 export const createChildTicket = async (parentId: number, data: Partial<ChildTicket>) => {
   const parent = await Ticket.findByPk(parentId);

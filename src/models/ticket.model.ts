@@ -27,6 +27,9 @@ export class Ticket extends Model {
   status!: string;
 
   @Column(DataType.STRING)
+  reportingmanager!: string;
+
+  @Column(DataType.STRING)
   sprint!: string;
 
   @Column(DataType.DATE)
@@ -44,6 +47,11 @@ export class Ticket extends Model {
   @Column(DataType.STRING)
   attachment!: string;
 
-  @HasMany(() => ChildTicket)
-  childTickets!: ChildTicket[];
+  // @HasMany(() => ChildTicket)
+  // childTickets!: ChildTicket[];
+//   @HasMany(() => ChildTicket, { foreignKey: 'parentId' })
+// childTickets!: ChildTicket[];
+@HasMany(() => ChildTicket, { foreignKey: 'parentId', as: 'childTickets' })
+childTickets!: ChildTicket[];
+
 }

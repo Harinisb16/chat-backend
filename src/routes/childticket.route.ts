@@ -1,10 +1,16 @@
 // src/routes/childticket.routes.ts
 import express from 'express';
 import * as controller from '../controllers/childticket.controller';
+import { upload } from '../middleware/upload';
 
 const router = express.Router();
 
-router.post('/childtickets/:parentId', controller.createChildTicket);
+router.post(
+  '/childtickets/:parentId',
+  upload.single('attachment'),
+  controller.createChildTicket
+);
+// router.post('/childtickets/:parentId', controller.createChildTicket);
 router.get('/childtickets', controller.getAllChildTickets);
 router.get('/childtickets/:id', controller.getChildTicketById);
 router.put('/childtickets/:id', controller.updateChildTicket);
