@@ -45,11 +45,14 @@ export class ChildTicket extends Model {
   @Column(DataType.STRING)
   ownedby!: string;
 
-  @Column({
-  type: DataType.STRING,
+
+@Column({
+  type: DataType.JSON,
   allowNull: true,
 })
-attachment?: string;
+attachments!: string[];
+
+
 
 
   // @ForeignKey(() => Ticket)

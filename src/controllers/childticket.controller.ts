@@ -1,21 +1,11 @@
-// src/controllers/childticket.controller.ts
 import { Request, Response } from 'express';
 import * as ChildTicketService from '../services/childticket.service';
-
-// export const createChildTicket = async (req: Request, res: Response) => {
-//   try {
-//     const parentId = parseInt(req.params.parentId);
-//     const ticket = await ChildTicketService.createChildTicket(parentId, req.body);
-//     res.status(201).json(ticket);
-//   } catch (err: any) {
-//     res.status(400).json({ message: err.message });
-//   }
-// };
-
 
 export const createChildTicket = async (req: Request, res: Response) => {
   try {
     const parentId = parseInt(req.params.parentId);
+
+    // Extract form fields
     const {
       title,
       description,
@@ -30,7 +20,11 @@ export const createChildTicket = async (req: Request, res: Response) => {
       ownedby
     } = req.body;
 
-    const attachment = req.file?.filename ?? undefined;
+    // Handle multiple attachments
+    let attachments: string[] = [];
+    if (req.files && Array.isArray(req.files)) {
+      attachments = (req.files as Express.Multer.File[]).map(file => file.filename);
+    }
 
     const ticket = await ChildTicketService.createChildTicket(parentId, {
       title,
@@ -39,16 +33,15 @@ export const createChildTicket = async (req: Request, res: Response) => {
       priority,
       status,
       sprint,
-      reportingmanager,
       startdate,
+      reportingmanager,
       enddate,
       comments,
       ownedby,
-      attachment
+      attachments
     });
 
-    const fullTicket = await ticket.reload(); // ensure all fields are loaded
-    res.status(201).json(fullTicket);
+    res.status(201).json(ticket);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
   }
@@ -69,12 +62,31 @@ export const getChildTicketById = async (req: Request, res: Response) => {
 export const updateChildTicket = async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
-    const updated = await ChildTicketService.updateChildTicket(id, req.body);
+
+    let newAttachments: string[] = [];
+    if (req.files && Array.isArray(req.files)) {
+      newAttachments = (req.files as Express.Multer.File[]).map(file => file.filename);
+    }
+
+    // Old attachments from the form
+    const existingAttachments = Array.isArray(req.body.existingAttachments)
+      ? req.body.existingAttachments
+      : req.body.existingAttachments
+      ? [req.body.existingAttachments]
+      : [];
+
+    const updated = await ChildTicketService.updateChildTicket(
+      id,
+      req.body,
+      [...existingAttachments, ...newAttachments]
+    );
+
     res.json(updated);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
   }
 };
+
 
 export const deleteChildTicket = async (req: Request, res: Response) => {
   try {

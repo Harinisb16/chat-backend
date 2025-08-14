@@ -44,8 +44,9 @@ export class Ticket extends Model {
   @Column(DataType.STRING)
   ownedby!: string;
 
-  @Column(DataType.STRING)
-  attachment!: string;
+@Column(DataType.JSON)
+attachments!: string[];
+
 
   // @HasMany(() => ChildTicket)
   // childTickets!: ChildTicket[];

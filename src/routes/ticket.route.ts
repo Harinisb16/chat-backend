@@ -1,21 +1,29 @@
-
 import { Router } from 'express';
 import { TicketController } from '../controllers/ticket.controller';
-
 import { upload } from '../middleware/upload';
-import { CommentController } from '../controllers/comment.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
-router.post('/:ticketId/comments', CommentController.addComment);
-router.post('/', upload.single('attachment'), TicketController.create);
+
+// Create ticket with multiple attachments
+router.post('/', upload.array('attachments', 10), TicketController.create);
+
+// Update ticket with multiple attachments
+router.put('/:id', upload.array('attachments', 10), TicketController.update);
+
+// Delete ticket
+router.delete('/:id', TicketController.remove);
+
+// Get all tickets
+router.get('/', TicketController.getAll);
+
+// Get ticket by id
+router.get('/:id', TicketController.getById);
+
+// Get tickets owned by logged-in user (requires auth)
 router.get('/my-tickets', authenticate, TicketController.getMyTickets);
 
-router.get('/', TicketController.getAll);
-router.get('/:id', TicketController.getById);
-router.put('/:id', TicketController.update);
-router.delete('/:id', TicketController.remove);
-router.get('/parentwithchild', TicketController.getAllParentTicketsWithChildren);
+// Get child tickets by parent ticket id
 router.get('/tickets/:parentId/children', TicketController.getChildTicketsByParentId);
 
 export default router;

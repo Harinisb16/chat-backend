@@ -3,6 +3,7 @@ import { Team } from '../models/team.model';
 import { TeamUser } from '../models/teamuser.model';
 import User from '../models/user.model';
 import Project from '../models/project.model';
+import { getIO } from '../config/socket.config';
 
 // export const getTeamDetailsWithUsers = async (req: Request, res: Response) => {
 //   const { teamId } = req.params;
@@ -83,14 +84,14 @@ export const createTeamWithUsers = async (req: Request, res: Response) => {
   }
 
   try {
-  const existingUsers = await User.findAll({
-  where: { userId: userIds },
-  attributes: ['userId'],
-});
+    // Check if users exist
+    const existingUsers = await User.findAll({
+      where: { userId: userIds },
+      attributes: ['userId'],
+    });
 
-const existingUserIds = existingUsers.map(user => user.userId);
-const invalidUserIds = userIds.filter(id => !existingUserIds.includes(id));
-
+    const existingUserIds = existingUsers.map(user => user.userId);
+    const invalidUserIds = userIds.filter(id => !existingUserIds.includes(id));
 
     if (invalidUserIds.length > 0) {
       return res.status(400).json({
@@ -114,6 +115,15 @@ const invalidUserIds = userIds.filter(id => !existingUserIds.includes(id));
     // Return full team with users and project
     const fullTeam = await Team.findByPk(team.id, { include: [Project, User] });
 
+    // Emit WebSocket event
+    const io = getIO(); 
+    if (io) {
+      io.emit('team:created', fullTeam); // renamed event to 'team:created' for clarity
+      console.log('WebSocket event emitted:', fullTeam);
+    } else {
+      console.warn('Socket.IO instance not found. Event not emitted.');
+    }
+
     res.status(201).json({
       message: 'Team created and users assigned successfully',
       team: fullTeam,
@@ -125,11 +135,13 @@ const invalidUserIds = userIds.filter(id => !existingUserIds.includes(id));
 };
 
 
-
 export const createTeam = async (req: Request, res: Response) => {
   try {
     const team = await Team.create(req.body);
     res.status(201).json(team);
+      const io = getIO(); // Get the Socket.IO server instance
+        io.emit('user:created', team); // Broadcast to all connected client
+        console.log('WebSocket event emitted:', team);
   } catch (err) {
     res.status(500).json({ error: 'Error creating team' });
   }
