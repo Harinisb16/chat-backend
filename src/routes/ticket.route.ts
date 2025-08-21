@@ -17,6 +17,19 @@ router.delete('/:id', TicketController.remove);
 // Get all tickets
 router.get('/', TicketController.getAll);
 
+router.get('/parentwithchild/:id', TicketController.getParentwithchildticket);
+
+// router.put('/updateparentwithchild/:id', TicketController.updateParentwithchildticket);
+
+router.put(
+  "/updateparentwithchild/:id",
+  upload.fields([
+    { name: "attachments", maxCount: 5 },
+    { name: "childAttachments", maxCount: 10 }
+  ]),
+  TicketController.updateParentwithchildticket
+);
+
 // Get ticket by id
 router.get('/:id', TicketController.getById);
 

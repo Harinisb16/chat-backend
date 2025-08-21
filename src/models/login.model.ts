@@ -17,6 +17,24 @@ export class Login extends Model {
   @Column(DataType.STRING)
   username!: string;
 
+  @Column(DataType.STRING)
+  firstName!: string;
+
+  @Column(DataType.STRING)
+  lastName!: string;
+
+  @Column(DataType.STRING)
+  phone!: string;
+
+  @Column(DataType.DATEONLY)
+  dob!: string;
+
+  @Column(DataType.STRING)
+  gender!: string;
+
+  @Column(DataType.STRING)
+  photo!: string;
+
   @Unique
   @Column(DataType.STRING)
   email!: string;

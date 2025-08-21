@@ -13,6 +13,18 @@ export class TicketService {
   static async getAllTickets(filter: WhereOptions<Ticket> = {}): Promise<Ticket[]> {
     return Ticket.findAll({ where: filter });
   }
+static async getParentwithchildticket(filter: WhereOptions<Ticket> = {}): Promise<Ticket[]> {
+  return Ticket.findAll({
+    where: filter,
+    include: [
+      {
+        model: ChildTicket,
+        as: "childTickets",   // ✅ must match @HasMany alias
+      },
+    ],
+  });
+}
+
 
   // Get ticket by primary key (id)
   static async getTicketById(id: number): Promise<Ticket | null> {

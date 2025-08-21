@@ -1,27 +1,28 @@
 import { Request, Response } from 'express';
-import { registerUser, loginUser } from '../services/auth.service';
+import { registerUser, loginUser, getAllUserslogin } from '../services/auth.service';
 import { generateToken } from '../utils/jwt';
 
 export const register = async (req: Request, res: Response) => {
   try {
-    let { username, email, password, role, roleId } = req.body;
+    const { username, email, password, role, roleId, firstName, lastName, phone, dob, gender } = req.body;
+    const photo = req.file?.path; // multer saves file path here
 
-    // Map `role` to `roleId` if only role is sent
-    if (!roleId && role) {
-      roleId = parseInt(role, 10);
-      if (isNaN(roleId)) throw new Error('Invalid role format');
-    }
-
-    const user = await registerUser(username, email, password, roleId);
+    const user = await registerUser(
+      username,
+      email,
+      password,
+      Number(roleId),
+      firstName,
+      lastName,
+      phone,
+      dob,
+      gender,
+      photo || ""
+    );
 
     res.status(201).json({
-      message: 'User registered successfully',
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        roleId: user.roleId
-      }
+      message: "User registered successfully",
+      user
     });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
@@ -37,7 +38,8 @@ export const login = async (req: Request, res: Response) => {
       id: user.id,
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      photo:user.photo
     });
 
     res.status(200).json({
@@ -46,9 +48,20 @@ export const login = async (req: Request, res: Response) => {
       username: user.username,
       userId: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
+           photo:user.photo
     });
   } catch (err: any) {
     res.status(401).json({ error: err.message });
+  }
+};
+
+
+export const getAll = async (req: Request, res: Response) => {
+  try {
+    const users = await getAllUserslogin();
+    res.status(200).json(users);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 };

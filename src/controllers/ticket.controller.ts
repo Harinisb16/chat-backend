@@ -3,6 +3,9 @@ import { TicketService } from '../services/ticket.service';
 import User from '../models/user.model';
 import { notifyReportingManager, confirmTicketOwner } from '../services/notificationService';
 import { getIO } from '../config/socket.config';
+import { ChildTicket } from '../models/childticket.model';
+import { Ticket } from '../models/ticket.model';
+import { Op } from 'sequelize';
 
 export class TicketController {
   
@@ -66,6 +69,82 @@ static async create(req: Request, res: Response): Promise<void> {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   }
+static async getParentwithchildticket(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+
+    const tickets = await TicketService.getParentwithchildticket({ id: Number(id) });
+
+    if (!tickets || tickets.length === 0) {
+      res.status(404).json({ message: "Ticket not found" });
+      return;
+    }
+
+    res.status(200).json(tickets[0]); // return a single parent with its children
+  } catch (err) {
+    console.error("Error fetching tickets:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+static async updateParentwithchildticket(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const { childTickets, ...parentData } = req.body;
+
+    const uploadedFiles = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+
+    const parentAttachments = uploadedFiles?.attachments?.map(file => file.path) || [];
+    parentData.attachments = parentAttachments;
+
+    const parentTicket = await Ticket.findByPk(Number(id), {
+      include: [{ model: ChildTicket, as: "childTickets" }],
+    });
+
+    if (!parentTicket) {
+      res.status(404).json({ message: "Parent ticket not found" });
+      return;
+    }
+
+    await parentTicket.update(parentData);
+
+    const parsedChildTickets: any[] = typeof childTickets === "string" ? JSON.parse(childTickets) : childTickets;
+
+    if (Array.isArray(parsedChildTickets)) {
+      for (const child of parsedChildTickets) {
+        const childFiles = uploadedFiles[`child_${child.id}`] || [];
+        const childAttachments = childFiles.map(file => file.path);
+        child.attachments = childAttachments;
+
+        if (child.id) {
+          await ChildTicket.update(child, { where: { id: child.id, parentId: parentTicket.id } });
+        } else {
+          await ChildTicket.create({ ...child, parentId: parentTicket.id });
+        }
+      }
+
+      const childIds = parsedChildTickets.filter(c => c.id).map(c => c.id);
+      await ChildTicket.destroy({
+        where: {
+          parentId: parentTicket.id,
+          id: { [Op.notIn]: childIds }
+        }
+      });
+    }
+
+    const updatedParent = await Ticket.findByPk(Number(id), {
+      include: [{ model: ChildTicket, as: "childTickets" }],
+    });
+
+    res.status(200).json(updatedParent);
+  } catch (err) {
+    console.error("Error updating ticket:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+
 
   // Get ticket by id
   static async getById(req: Request, res: Response): Promise<void> {

@@ -1,3 +1,4 @@
+import { getAllUsers } from '../controllers/user.controller';
 import { Login } from '../models/login.model';
 import { UserRole } from '../models/userrole.model';
 import bcrypt from 'bcryptjs';
@@ -6,7 +7,13 @@ export const registerUser = async (
   username: string,
   email: string,
   password: string,
-  roleId: number
+  roleId: number,
+  firstName: string,
+  lastName: string,
+  phone: string,
+  dob: string,
+  gender: string,
+  photo: string
 ) => {
   const existingUser = await Login.findOne({ where: { email } });
   if (existingUser) throw new Error('User already exists');
@@ -15,6 +22,12 @@ export const registerUser = async (
 
   return await Login.create({
     username,
+    firstName,
+    lastName,
+    phone,
+    dob,
+    gender,
+    photo,
     email,
     password: hashedPassword,
     roleId
@@ -36,6 +49,27 @@ export const loginUser = async (email: string, password: string) => {
     id: user.id,
     username: user.username,
     email: user.email,
-    role: user.role.role // comes from tbl_user_role
+    role: user.role.role,
+    photo: user.photo 
   };
 };
+
+
+export const getAllUserslogin = async () => {
+  return await Login.findAll({
+    attributes: [
+      "id",
+      "username",
+      "firstName",
+      "lastName",
+      "phone",
+      "dob",
+      "gender",
+      "photo",
+      "email",
+      "roleId"
+    ],
+    include: [{ model: UserRole, attributes: ["role"] }]
+  });
+};
+

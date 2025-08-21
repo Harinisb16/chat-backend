@@ -46,13 +46,14 @@ export class Ticket extends Model {
 
 @Column(DataType.JSON)
 attachments!: string[];
-
+@HasMany(() => ChildTicket, { foreignKey: 'parentId', as: 'childTickets' })
+childTickets!: ChildTicket[];
 
   // @HasMany(() => ChildTicket)
   // childTickets!: ChildTicket[];
 //   @HasMany(() => ChildTicket, { foreignKey: 'parentId' })
 // childTickets!: ChildTicket[];
-@HasMany(() => ChildTicket, { foreignKey: 'parentId', as: 'childTickets' })
-childTickets!: ChildTicket[];
+// @HasMany(() => ChildTicket, { foreignKey: 'parentId', as: 'childTickets' })
+// childTickets!: ChildTicket[];
 
 }
