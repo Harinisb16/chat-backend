@@ -1,5 +1,9 @@
 import { Request, Response } from 'express';
 import * as ChildTicketService from '../services/childticket.service';
+import { ChildTicket } from '../models/childticket.model';
+import path from 'path';
+import fs from 'fs';
+
 
 export const createChildTicket = async (req: Request, res: Response) => {
   try {
@@ -88,6 +92,7 @@ export const updateChildTicket = async (req: Request, res: Response) => {
 };
 
 
+
 export const deleteChildTicket = async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
@@ -95,5 +100,35 @@ export const deleteChildTicket = async (req: Request, res: Response) => {
     res.json(result);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
+  } 
+};
+
+export const removeAttachment = async (req: Request, res: Response) => {
+  try {
+    const ticketId = Number(req.params.id);
+    const fileName = req.params.fileName;
+
+    const ticket = await ChildTicket.findByPk(ticketId);
+    if (!ticket) {
+      res.status(404).json({ error: "Ticket not found" });
+      return;
+    }
+
+    // Remove the file from the DB
+    ticket.attachments = (ticket.attachments || []).filter(
+      (f: string) => f !== fileName
+    );
+
+    await ticket.save();
+
+    // Optional: Remove physical file
+    const filePath = path.join(__dirname, "../uploads", fileName);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    res.json({ message: "Attachment deleted successfully" });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
   }
 };

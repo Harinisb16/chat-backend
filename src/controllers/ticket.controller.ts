@@ -86,63 +86,75 @@ static async getParentwithchildticket(req: Request, res: Response): Promise<void
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
-static async updateParentwithchildticket(req: Request, res: Response): Promise<void> {
-  try {
-    const { id } = req.params;
-    const { childTickets, ...parentData } = req.body;
+// TicketController.ts
+  static async updateParentwithchildticket(req: Request, res: Response): Promise<void> {
+    try {
+      // --- Type-safe handling of req.files ---
+      const files = req.files;
+      let parentFiles: Express.Multer.File[] = [];
+      let childFiles: Express.Multer.File[] = [];
 
-    const uploadedFiles = req.files as {
-      [fieldname: string]: Express.Multer.File[];
-    };
+      if (files && !Array.isArray(files)) {
+        // files is { [fieldname: string]: File[] }
+        parentFiles = files["attachments"] || [];
+        childFiles = files["childAttachments"] || [];
+      }
 
-    const parentAttachments = uploadedFiles?.attachments?.map(file => file.path) || [];
-    parentData.attachments = parentAttachments;
+      // --- Fetch existing ticket ---
+      const existingTicket = await TicketService.getTicketById(+req.params.id);
+      if (!existingTicket) {
+        res.status(404).json({ error: "Ticket not found" });
+        return;
+      }
 
-    const parentTicket = await Ticket.findByPk(Number(id), {
-      include: [{ model: ChildTicket, as: "childTickets" }],
-    });
-
-    if (!parentTicket) {
-      res.status(404).json({ message: "Parent ticket not found" });
-      return;
-    }
-
-    await parentTicket.update(parentData);
-
-    const parsedChildTickets: any[] = typeof childTickets === "string" ? JSON.parse(childTickets) : childTickets;
-
-    if (Array.isArray(parsedChildTickets)) {
-      for (const child of parsedChildTickets) {
-        const childFiles = uploadedFiles[`child_${child.id}`] || [];
-        const childAttachments = childFiles.map(file => file.path);
-        child.attachments = childAttachments;
-
-        if (child.id) {
-          await ChildTicket.update(child, { where: { id: child.id, parentId: parentTicket.id } });
-        } else {
-          await ChildTicket.create({ ...child, parentId: parentTicket.id });
+      // --- Parse FormData fields ---
+      const bodyData: any = {};
+      for (const key in req.body) {
+        try {
+          bodyData[key] = JSON.parse(req.body[key]); // parse JSON strings
+        } catch {
+          bodyData[key] = req.body[key]; // fallback to string
         }
       }
 
-      const childIds = parsedChildTickets.filter(c => c.id).map(c => c.id);
-      await ChildTicket.destroy({
-        where: {
-          parentId: parentTicket.id,
-          id: { [Op.notIn]: childIds }
-        }
+      // --- Merge parent attachments ---
+      const updatedParentAttachments = [
+        ...(existingTicket.attachments || []), // keep old attachments
+        ...parentFiles.map((f) => f.filename), // add new files
+      ];
+
+      // --- Merge child tickets ---
+      const updatedChildren = (bodyData.childTickets || []).map((child: any) => {
+        const existingChild = (existingTicket.childTickets || []).find((c) => c.id === child.id);
+
+        // Attach all uploaded child files (you can refine by child ID if needed)
+        const newChildFiles = childFiles.map((f) => f.filename);
+
+        return {
+          ...child,
+          attachments: [
+            ...(existingChild?.attachments || []),
+            ...newChildFiles,
+          ],
+        };
+      });
+
+      // --- Final update object ---
+      const updatedData = {
+        ...bodyData,
+        attachments: updatedParentAttachments,
+        childTickets: updatedChildren,
+      };
+
+      // --- Call service to update ---
+      const updatedTicket = await TicketService.updateTicket(+req.params.id, updatedData);
+      res.status(200).json(updatedTicket);
+    } catch (err) {
+      res.status(400).json({
+        error: err instanceof Error ? err.message : "Bad Request",
       });
     }
-
-    const updatedParent = await Ticket.findByPk(Number(id), {
-      include: [{ model: ChildTicket, as: "childTickets" }],
-    });
-
-    res.status(200).json(updatedParent);
-  } catch (err) {
-    console.error("Error updating ticket:", err);
-    res.status(500).json({ error: "Internal Server Error" });
   }
-}
 
 
 
@@ -226,4 +238,34 @@ static async updateParentwithchildticket(req: Request, res: Response): Promise<v
       res.status(404).json({ error: err instanceof Error ? err.message : 'Not found' });
     }
   }
+
+
+static async removeAttachment(req: Request, res: Response): Promise<void> {
+  try {
+    const ticketId = Number(req.params.id);
+    const fileName = req.params.fileName;
+
+    const ticket = await Ticket.findByPk(ticketId);
+    if (!ticket) {
+      res.status(404).json({ error: "Ticket not found" });
+      return;
+    }
+
+    // Remove the file from the DB (attachments is JSON array)
+    ticket.attachments = (ticket.attachments || []).filter(
+      (f: string) => f !== fileName
+    );
+
+    await ticket.save();
+
+    // (Optional) also remove file physically from server
+    // fs.unlinkSync(path.join(__dirname, "../uploads", fileName));
+
+    res.json({ message: "Attachment deleted successfully" });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : "Bad Request" });
+  }
+}
+
+
 }

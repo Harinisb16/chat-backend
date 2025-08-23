@@ -64,4 +64,22 @@ static async getParentwithchildticket(filter: WhereOptions<Ticket> = {}): Promis
     // childTickets is the relation alias, return the children
     return parent.childTickets;
   }
+
+  static async deleteAttachment(ticketId: number, fileName: string): Promise<{ message: string }> {
+  const ticket = await Ticket.findByPk(ticketId);
+  if (!ticket) throw new Error("Ticket not found");
+
+  // Ensure attachments is an array
+  let attachments: string[] = ticket.attachments || [];
+
+  // Remove the given file
+  attachments = attachments.filter((f) => f !== fileName);
+
+  // Update the ticket
+  ticket.attachments = attachments;
+  await ticket.save();
+
+  return { message: `Attachment '${fileName}' deleted successfully` };
+}
+
 }

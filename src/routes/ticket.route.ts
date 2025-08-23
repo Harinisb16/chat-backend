@@ -38,5 +38,6 @@ router.get('/my-tickets', authenticate, TicketController.getMyTickets);
 
 // Get child tickets by parent ticket id
 router.get('/tickets/:parentId/children', TicketController.getChildTicketsByParentId);
+router.delete('/:id/attachments/:fileName', TicketController.removeAttachment);
 
 export default router;

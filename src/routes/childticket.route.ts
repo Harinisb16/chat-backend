@@ -19,5 +19,8 @@ router.get('/childtickets', controller.getAllChildTickets);
 router.get('/childtickets/:id', controller.getChildTicketById);
 router.put('/childtickets/:id',upload.array('attachments', 10), controller.updateChildTicket);
 router.delete('/childtickets/:id', controller.deleteChildTicket);
-
+router.delete(
+  '/childtickets/:id/attachments/:fileName',
+  controller.removeAttachment
+);
 export default router;
