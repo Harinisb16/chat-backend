@@ -1,7 +1,7 @@
 // socketClient.js
 const { io } = require('socket.io-client');
 
-const socket = io('http://localhost:5000/ws'); // must match your namespace
+const socket = io('http://localhost:5001/ws'); 
 
 socket.on('connect', () => {
   console.log('Connected:', socket.id);

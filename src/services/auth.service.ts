@@ -1,8 +1,18 @@
-import { getAllUsers } from '../controllers/user.controller';
-import { Login } from '../models/login.model';
-import { UserRole } from '../models/userrole.model';
-import bcrypt from 'bcryptjs';
+import bcrypt from "bcryptjs";
+import User from "../models/user.model";
+import { Login } from "../models/login.model";
+import { UserRole } from "../models/userrole.model";
 
+export interface LoginResponse {
+  id: number;
+  userId: number;
+  username: string;
+  email: string;
+  role: string;
+  photo: string;
+}
+
+// ================= REGISTER USER =================
 export const registerUser = async (
   username: string,
   email: string,
@@ -15,50 +25,71 @@ export const registerUser = async (
   gender: string,
   photo: string
 ) => {
+  // Check if email already exists
   const existingUser = await Login.findOne({ where: { email } });
-  if (existingUser) throw new Error('User already exists');
+  if (existingUser) throw new Error("User already exists");
 
+  // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  return await Login.create({
+  // STEP 1 — Create User
+  const newUser = await User.create({
     username,
+    email,
+    phone,
+    roleId,
+    isOnline: false,
+  });
+
+  // STEP 2 — Create Login row linked to User
+  const loginRecord = await Login.create({
+    username,
+    email,
+    password: hashedPassword,
+    roleId,
+    userId: newUser.userId, // FK reference
     firstName,
     lastName,
     phone,
     dob,
     gender,
     photo,
-    email,
-    password: hashedPassword,
-    roleId
   });
+
+  return loginRecord;
 };
 
-export const loginUser = async (email: string, password: string) => {
-  const user = await Login.findOne({
+// ================= LOGIN USER =================
+export const loginUser = async (
+  email: string,
+  password: string
+): Promise<LoginResponse> => {
+  const login = await Login.findOne({
     where: { email },
-    include: [{ model: UserRole, attributes: ['role'] }]
+    include: [{ model: UserRole, attributes: ["role"] }],
   });
 
-  if (!user) throw new Error('Invalid email or password');
+  if (!login) throw new Error("Invalid email or password");
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) throw new Error('Invalid email or password');
+  const isMatch = await bcrypt.compare(password, login.password);
+  if (!isMatch) throw new Error("Invalid email or password");
 
   return {
-    id: user.id,
-    username: user.username,
-    email: user.email,
-    role: user.role.role,
-    photo: user.photo 
+    id: login.id,
+    userId: login.userId,
+    username: login.username,
+    email: login.email,
+    role: login.UserRole?.role || "User",
+    photo: login.photo,
   };
 };
 
-
+// ================= GET ALL USERS =================
 export const getAllUserslogin = async () => {
   return await Login.findAll({
     attributes: [
       "id",
+      "userId",
       "username",
       "firstName",
       "lastName",
@@ -67,9 +98,8 @@ export const getAllUserslogin = async () => {
       "gender",
       "photo",
       "email",
-      "roleId"
+      "roleId",
     ],
-    include: [{ model: UserRole, attributes: ["role"] }]
+    include: [{ model: UserRole, attributes: ["role"] }],
   });
 };
-

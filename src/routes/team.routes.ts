@@ -9,6 +9,6 @@ router.post('/', teamController.createTeam);
 router.get('/', teamController.getAllTeams);
 router.put('/:id', teamController.updateTeam);
 router.delete('/:id', teamController.deleteTeam);
-
+router.get("/:id", teamController.getTeamById);
 router.post('/teams/create-with-users', teamController.createTeamWithUsers);
 export default router;

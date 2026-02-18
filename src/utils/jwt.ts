@@ -9,3 +9,9 @@ export const generateToken = (payload: object) => {
 export const verifyToken = (token: string) => {
   return jwt.verify(token, JWT_SECRET);
 };
+
+export interface JwtPayload {
+  id: number;
+  email: string;
+  role: "admin" | "user";
+};

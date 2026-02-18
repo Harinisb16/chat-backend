@@ -155,16 +155,32 @@ export const getAllTeams = async (_: Request, res: Response) => {
     res.status(500).json({ error: 'Error fetching teams' });
   }
 };
-
 export const getTeamById = async (req: Request, res: Response) => {
   try {
-    const team = await Team.findByPk(req.params.id, { include: [Project, User] });
-    if (!team) return res.status(404).json({ error: 'Team not found' });
+    const { id } = req.params;
+
+    const team = await Team.findByPk(id, {
+      include: [Project, User],
+    });
+
+    if (!team) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
     res.status(200).json(team);
   } catch (err) {
-    res.status(500).json({ error: 'Error fetching team' });
+    res.status(500).json({ error: "Error fetching team" });
   }
 };
+// export const getTeamById = async (req: Request, res: Response) => {
+//   try {
+//     const team = await Team.findByPk(req.params.id, { include: [Project, User] });
+//     if (!team) return res.status(404).json({ error: 'Team not found' });
+//     res.status(200).json(team);
+//   } catch (err) {
+//     res.status(500).json({ error: 'Error fetching team' });
+//   }
+// };
 
 export const updateTeam = async (req: Request, res: Response) => {
   try {

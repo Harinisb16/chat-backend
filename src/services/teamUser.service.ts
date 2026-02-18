@@ -22,43 +22,91 @@ export const createTeamUser = async (userIds: number[], teamId: number, projectI
   };
 };
 
+// export const getAllTeamUsers = async () => {
+//   const records = await TeamUser.findAll({
+//     include: [User, Team, Project],
+//     raw: false
+//   });
+
+//   const grouped = records.reduce((acc: any[], curr) => {
+//     const key = `${curr.teamId}_${curr.projectId}`;
+//     const existing = acc.find(item => item.key === key);
+
+//     const userInfo = {
+//       userId: curr.user.userId,
+//       userName: curr.user.username
+//     };
+
+//     if (existing) {
+//       if (!existing.userIds.includes(curr.user.userId)) {
+//         existing.userIds.push(curr.user.userId);
+//         existing.users.push(userInfo);
+//       }
+//     } else {
+//       acc.push({
+//         key,
+//         id: curr.id,
+//         userIds: [curr.user.userId],
+//         teamId: curr.teamId,
+//         projectId: curr.projectId,
+//         team: {
+//           teamId: curr.team.teamId,
+//           teamName: curr.team.teamName,
+//           teamLead: curr.team.teamLead,
+//           projectId: curr.team.projectId
+//         },
+//         project: {
+//           projectId: curr.project.projectId,
+//           projectName: curr.project.projectName,
+//           description: curr.project.description
+//         },
+//         users: [userInfo]
+//       });
+//     }
+
+//     return acc;
+//   }, []);
+
+//   return grouped;
+// };
+
+
 export const getAllTeamUsers = async () => {
   const records = await TeamUser.findAll({
     include: [User, Team, Project],
-    raw: false
   });
 
-  const grouped = records.reduce((acc: any[], curr) => {
+  const grouped = records.reduce((acc: any[], curr: any) => {
     const key = `${curr.teamId}_${curr.projectId}`;
     const existing = acc.find(item => item.key === key);
 
     const userInfo = {
-      userId: curr.user.userId,
-      userName: curr.user.username
+      userId: curr.user?.userId,
+      userName: curr.user?.username
     };
 
     if (existing) {
-      if (!existing.userIds.includes(curr.user.userId)) {
-        existing.userIds.push(curr.user.userId);
+      if (!existing.userIds.includes(curr.user?.userId)) {
+        existing.userIds.push(curr.user?.userId);
         existing.users.push(userInfo);
       }
     } else {
       acc.push({
         key,
         id: curr.id,
-        userIds: [curr.user.userId],
+        userIds: [curr.user?.userId],
         teamId: curr.teamId,
         projectId: curr.projectId,
         team: {
-          teamId: curr.team.teamId,
-          teamName: curr.team.teamName,
-          teamLead: curr.team.teamLead,
-          projectId: curr.team.projectId
+          teamId: curr.team?.teamId,
+          teamName: curr.team?.teamName,
+          teamLead: curr.team?.teamLead,
+          projectId: curr.team?.projectId
         },
         project: {
-          projectId: curr.project.projectId,
-          projectName: curr.project.projectName,
-          description: curr.project.description
+          projectId: curr.project?.projectId,
+          projectName: curr.project?.projectName,
+          description: curr.project?.description
         },
         users: [userInfo]
       });

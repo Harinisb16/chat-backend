@@ -37,7 +37,7 @@ export const getProjectById = async (req: Request, res: Response) => {
       include: [
         {
           model: Team,
-          include: [User], // 👈 include users inside teams
+          include: [User], 
         },
       ],
     });

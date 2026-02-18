@@ -1,6 +1,5 @@
 import { Sequelize } from 'sequelize-typescript';
 import dotenv from 'dotenv';
-import path from 'path';
 import { Login } from '../models/login.model';
 import Role from '../models/role.model';
 import User from '../models/user.model';
@@ -14,8 +13,8 @@ import { TeamLead } from '../models/teamleaddetail.model';
 import { UserRole } from '../models/userrole.model';
 import { Signup } from '../models/signup.model';
 
-
 dotenv.config();
+console.log("DB NAME:", process.env.DB_NAME);
 
 export const sequelize = new Sequelize({
   dialect: 'postgres',
@@ -24,6 +23,29 @@ export const sequelize = new Sequelize({
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-   models: [Login,Role,User,Sprint,Ticket,Team,TeamUser,Project,ChildTicket,TeamLead,UserRole,Signup],
+
+  models: [
+    Login,
+    Role,
+    User,
+    Sprint,
+    Ticket,
+    Team,
+    TeamUser,
+    Project,
+    ChildTicket,
+    TeamLead,
+    UserRole,
+    Signup,
+  ],
+
   logging: false,
+
+  // ✅ pool must be INSIDE this object
+  pool: {
+    max: 5,        // max connections
+    min: 0,        // min connections
+    acquire: 30000,// time to try getting connection
+    idle: 10000,   // idle time before release
+  },
 });

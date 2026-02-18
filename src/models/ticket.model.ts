@@ -18,6 +18,9 @@ export class Ticket extends Model {
   description!: string;
 
   @Column(DataType.STRING)
+  teamname!: string;
+
+  @Column(DataType.STRING)
   type!: string;
 
   @Column(DataType.STRING)

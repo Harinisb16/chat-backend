@@ -2,15 +2,12 @@ import {
   Table,
   Column,
   Model,
-  PrimaryKey,
-  AutoIncrement,
   ForeignKey,
-  BelongsTo,
-  DataType
+  BelongsTo
 } from 'sequelize-typescript';
 import User from './user.model';
 import { Team } from './team.model';
-import Project from './project.model';
+
 @Table({ tableName: 'tbl_ReportingManager_Detail', timestamps: false })
 export class TeamUser extends Model {
   @ForeignKey(() => Team)
@@ -21,5 +18,10 @@ export class TeamUser extends Model {
   @Column
   userId!: number;
 
-}
+  // Add this to define the association
+  @BelongsTo(() => Team)
+  team!: Team;
 
+  @BelongsTo(() => User)
+  user!: User;
+}

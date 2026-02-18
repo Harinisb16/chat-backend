@@ -1,6 +1,9 @@
 import { WhereOptions } from 'sequelize';
 import { Ticket } from '../models/ticket.model';
 import { ChildTicket } from '../models/childticket.model';
+import { Team } from '../models/team.model';
+import User from '../models/user.model';
+import { Sprint } from '../models/sprint.model';
 
 export class TicketService {
 
@@ -8,7 +11,44 @@ export class TicketService {
   static async createTicket(data: Partial<Ticket>): Promise<Ticket> {
     return Ticket.create(data);
   }
+ static async getTicketsGroupedBySprint() {
+    // Fetch all tickets
+    const tickets = await Ticket.findAll();
 
+    // Fetch all sprints
+    const sprints = await Sprint.findAll();
+
+    const result: any[] = [];
+
+    for (const sprint of sprints) {
+      // Tickets belonging to this sprint
+      const sprintTickets = tickets.filter(t => t.sprint === sprint.id.toString() || t.sprint === sprint.sprintname);
+
+      if (sprintTickets.length === 0) continue;
+
+      // Find team of this sprint
+      const team = await Team.findOne({
+        where: { teamName: sprint.team }, // assuming sprint.team = teamName
+        include: [User],
+      });
+
+      const teamInfo = team
+        ? {
+            teamName: team.teamName,
+            users: team.users.map(u => ({ id: u.id, username: u.username || u.username })),
+          }
+        : null;
+
+      result.push({
+        sprint: sprint.id,
+        sprintName: sprint.sprintname,
+        tickets: sprintTickets,
+        team: teamInfo,
+      });
+    }
+
+    return result;
+  }
   // Get all tickets with optional filter (e.g. ownedby)
   static async getAllTickets(filter: WhereOptions<Ticket> = {}): Promise<Ticket[]> {
     return Ticket.findAll({ where: filter });

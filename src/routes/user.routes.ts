@@ -6,6 +6,7 @@ import {
   updateUser,
   deleteUser,
 } from '../controllers/user.controller';
+import { notifyOfflineUsers } from "../controllers/user.controller";
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.get('/', getAllUsers);
 router.get('/:id', getUserById);
 router.put('/:id', updateUser);
 router.delete('/:id', deleteUser);
+router.post("/notify-offline", notifyOfflineUsers);
 
 export default router;

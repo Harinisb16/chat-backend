@@ -1,11 +1,34 @@
-import { Request, Response } from 'express';
-import { registerUser, loginUser, getAllUserslogin } from '../services/auth.service';
-import { generateToken } from '../utils/jwt';
+import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
+import {
+  registerUser,
+  loginUser as loginUserService,
+  getAllUserslogin,
+} from "../services/auth.service";
+import User from "../models/user.model";
+import { JwtUserPayload } from "../types";
 
+/* 🔐 Extended Request */
+export interface AuthRequest extends Request {
+  user?: JwtUserPayload;
+}
+
+/* ================= REGISTER ================= */
 export const register = async (req: Request, res: Response) => {
   try {
-    const { username, email, password, role, roleId, firstName, lastName, phone, dob, gender } = req.body;
-    const photo = req.file?.path; // multer saves file path here
+    const {
+      username,
+      email,
+      password,
+      roleId,
+      firstName,
+      lastName,
+      phone,
+      dob,
+      gender,
+    } = req.body;
+
+    const photo = req.file?.path || "";
 
     const user = await registerUser(
       username,
@@ -17,47 +40,103 @@ export const register = async (req: Request, res: Response) => {
       phone,
       dob,
       gender,
-      photo || ""
+      photo
     );
 
     res.status(201).json({
       message: "User registered successfully",
-      user
+      user,
     });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }
 };
 
+/* ================= LOGIN ================= */
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    const user = await loginUser(email, password);
 
-    const token = generateToken({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      photo:user.photo
+    const loginUser = await loginUserService(email, password);
+
+    const user = await User.findByPk(loginUser.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User record not found" });
+    }
+
+    /* Mark user online */
+    await user.update({
+      isOnline: true,
+      lastLogin: new Date(),
+      offlineNotified: false,
     });
 
-    res.status(200).json({
-      message: "Login successful",
+    /* 🔑 Generate JWT */
+    const token = jwt.sign(
+      {
+        userId: user.userId,
+        username: user.username,
+        email: user.email,
+        role: loginUser.role, // ✅ safest source
+      },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "1d" }
+    );
+
+    return res.status(200).json({
       token,
-      username: user.username,
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-           photo:user.photo
+      user: {
+        userId: user.userId,
+        username: user.username,
+        email: user.email,
+        role: loginUser.role,
+      },
     });
   } catch (err: any) {
     res.status(401).json({ error: err.message });
   }
 };
 
+/* ================= LOGOUT ================= */
+export const logoutUser = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
-export const getAll = async (req: Request, res: Response) => {
+    const user = await User.findByPk(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    await user.update({ isOnline: false });
+
+    res.json({ message: "Logged out successfully" });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* ================= MARK ONLINE ================= */
+export const markOnline = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    await user.update({ isOnline: true });
+
+    res.json({ message: "User marked online", user });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* ================= GET ALL USERS ================= */
+export const getAll = async (_req: Request, res: Response) => {
   try {
     const users = await getAllUserslogin();
     res.status(200).json(users);

@@ -17,6 +17,7 @@ router.delete('/:id', TicketController.remove);
 // Get all tickets
 router.get('/', TicketController.getAll);
 
+router.get('/tic', TicketController.getTicketsGroupedBySprint);
 router.get('/parentwithchild/:id', TicketController.getParentwithchildticket);
 
 // router.put('/updateparentwithchild/:id', TicketController.updateParentwithchildticket);

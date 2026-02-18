@@ -1,14 +1,39 @@
-import {
-  Table, Column, Model, PrimaryKey, AutoIncrement,
-  DataType, Unique, ForeignKey, BelongsTo
-} from 'sequelize-typescript';
-import { UserRole } from './userrole.model';
+  import {
+  Table,
+  Column,
+  Model,
+  PrimaryKey,
+  AutoIncrement,
+  DataType,
+  ForeignKey,
+  BelongsTo,
+} from "sequelize-typescript";
+import { UserRole } from "./userrole.model";
+import User from "./user.model";
 
-@Table({
-  tableName: 'tbl_login',
-  timestamps: false,
-})
-export class Login extends Model {
+//  Attributes interface
+export interface LoginAttributes {
+  id: number;
+  username: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  dob: string;
+  gender: string;
+  photo: string;
+  email: string;
+  password: string;
+  roleId: number;
+  userId: number;
+}
+
+//  Optional attributes when creating
+export interface LoginCreationAttributes
+  extends Partial<Omit<LoginAttributes, "id">> {} // id is auto-increment
+
+//  Model
+@Table({ tableName: "tbl_login", timestamps: false })
+export class Login extends Model<LoginAttributes, LoginCreationAttributes> {
   @PrimaryKey
   @AutoIncrement
   @Column(DataType.INTEGER)
@@ -26,7 +51,7 @@ export class Login extends Model {
   @Column(DataType.STRING)
   phone!: string;
 
-  @Column(DataType.DATEONLY)
+  @Column(DataType.STRING)
   dob!: string;
 
   @Column(DataType.STRING)
@@ -35,7 +60,6 @@ export class Login extends Model {
   @Column(DataType.STRING)
   photo!: string;
 
-  @Unique
   @Column(DataType.STRING)
   email!: string;
 
@@ -47,7 +71,14 @@ export class Login extends Model {
   roleId!: number;
 
   @BelongsTo(() => UserRole)
-  role!: UserRole;
+  UserRole?: UserRole;
+
+  @ForeignKey(() => User)
+  @Column(DataType.INTEGER)
+  userId!: number;
+
+  @BelongsTo(() => User)
+  user?: User;
 }
 
-export default [Login];
+export default Login;
