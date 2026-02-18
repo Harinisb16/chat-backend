@@ -67,6 +67,12 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/admin", adminRoutes);
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "Backend is running ",
+  });
+});
 
 app.post("/api/ai/ask", async (req, res) => {
   try {

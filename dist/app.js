@@ -61,6 +61,12 @@ app.use("/api/childticket", childticket_route_1.default);
 app.use("/api/ai", aiRoutes_1.default);
 app.use("/api/chat", chat_routes_1.default);
 app.use("/admin", admin_routes_1.default);
+app.get("/", (req, res) => {
+    res.status(200).json({
+        status: "success",
+        message: "Backend is running ",
+    });
+});
 app.post("/api/ai/ask", async (req, res) => {
     try {
         const { prompt } = req.body;
