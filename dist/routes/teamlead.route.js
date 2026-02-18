@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const temalead_controller_1 = require("../controllers/temalead.controller");
+const router = (0, express_1.Router)();
+router.post('/', temalead_controller_1.TeamLeadController.create);
+router.get('/', temalead_controller_1.TeamLeadController.getAll);
+router.get('/:id', temalead_controller_1.TeamLeadController.getById);
+router.put('/:id', temalead_controller_1.TeamLeadController.update);
+router.delete('/:id', temalead_controller_1.TeamLeadController.delete);
+exports.default = router;

@@ -109,6 +109,145 @@
 // };
 
 
+// import { Server, Socket } from "socket.io";
+// import ChatMessage from "../models/chatMessage.model";
+// import * as chatService from "../services/chat.service";
+
+// const onlineUsers = new Map<string, string>();
+
+// export const initChatSocket = (io: Server) => {
+//   io.on("connection", (socket: Socket) => {
+//     console.log("User connected:", socket.id);
+
+//     /* =================================================
+//        ROOM JOIN SYSTEM (Your Requested Code)
+//     ================================================== */
+//     socket.on("join", (userId: number) => {
+//       socket.join(`user_${userId}`);
+//       console.log(`User ${userId} joined room user_${userId}`);
+//     });
+
+//     socket.on("send_message", (data) => {
+//       const { senderId, receiverId, message } = data;
+
+//       console.log("Room Message:", data);
+
+//       io.to(`user_${receiverId}`).emit("receive_message", {
+//         senderId,
+//         receiverId,
+//         message,
+//       });
+//     });
+
+//     /* =================================================
+//        ONLINE TRACKING SYSTEM
+//     ================================================== */
+//     socket.on("user-online", async (userId: string) => {
+//       onlineUsers.set(userId, socket.id);
+
+//       try {
+//         const pendingMessages =
+//           await chatService.getUndeliveredMessages(userId);
+
+//         for (const msg of pendingMessages) {
+//           socket.emit("receive-message", msg);
+//           await chatService.markDelivered(msg.id);
+//         }
+
+//         io.emit("online-users", Array.from(onlineUsers.keys()));
+//       } catch (err) {
+//         console.error("Error fetching undelivered:", err);
+//       }
+//     });
+
+//     /* =================================================
+//        ADMIN SEND MESSAGE (DB STORED)
+//     ================================================== */
+//     socket.on(
+//       "admin-send-message",
+//       async ({
+//         senderId,
+//         receiverId,
+//         message,
+//       }: {
+//         senderId: string;
+//         receiverId: string;
+//         message: string;
+//       }) => {
+//         try {
+//           const delivered = onlineUsers.has(receiverId);
+
+//           const newMessage = await ChatMessage.create({
+//             senderId,
+//             receiverId,
+//             message,
+//             delivered,
+//           });
+
+//           const receiverSocketId = onlineUsers.get(receiverId);
+
+//           if (receiverSocketId) {
+//             io.to(receiverSocketId).emit("receive-message", newMessage);
+//           }
+//         } catch (err) {
+//           console.error("Error admin-send-message:", err);
+//         }
+//       }
+//     );
+
+//     /* =================================================
+//        USER SEND MESSAGE (DB STORED)
+//     ================================================== */
+//     socket.on(
+//       "send-message",
+//       async ({
+//         senderId,
+//         receiverId,
+//         message,
+//       }: {
+//         senderId: string;
+//         receiverId: string;
+//         message: string;
+//       }) => {
+//         try {
+//           const delivered = onlineUsers.has(receiverId);
+
+//           const newMessage = await ChatMessage.create({
+//             senderId,
+//             receiverId,
+//             message,
+//             delivered,
+//           });
+
+//           const receiverSocketId = onlineUsers.get(receiverId);
+
+//           if (receiverSocketId) {
+//             io.to(receiverSocketId).emit("receive-message", newMessage);
+//           }
+//         } catch (err) {
+//           console.error("Error send-message:", err);
+//         }
+//       }
+//     );
+
+//     /* =================================================
+//        DISCONNECT
+//     ================================================== */
+//     socket.on("disconnect", () => {
+//       for (const [userId, sockId] of onlineUsers.entries()) {
+//         if (sockId === socket.id) {
+//           onlineUsers.delete(userId);
+//           break;
+//         }
+//       }
+
+//       io.emit("online-users", Array.from(onlineUsers.keys()));
+//       console.log("User disconnected:", socket.id);
+//     });
+//   });
+// };
+
+
 import { Server, Socket } from "socket.io";
 import ChatMessage from "../models/chatMessage.model";
 import * as chatService from "../services/chat.service";
@@ -120,7 +259,7 @@ export const initChatSocket = (io: Server) => {
     console.log("User connected:", socket.id);
 
     /* =================================================
-       ROOM JOIN SYSTEM (Your Requested Code)
+       ROOM JOIN SYSTEM
     ================================================== */
     socket.on("join", (userId: number) => {
       socket.join(`user_${userId}`);
@@ -129,8 +268,6 @@ export const initChatSocket = (io: Server) => {
 
     socket.on("send_message", (data) => {
       const { senderId, receiverId, message } = data;
-
-      console.log("Room Message:", data);
 
       io.to(`user_${receiverId}`).emit("receive_message", {
         senderId,
@@ -161,7 +298,36 @@ export const initChatSocket = (io: Server) => {
     });
 
     /* =================================================
-       ADMIN SEND MESSAGE (DB STORED)
+       COMMON MESSAGE HANDLER (ADMIN + USER)
+    ================================================== */
+    const handleMessage = async (
+      senderId: string,
+      receiverId: string,
+      message: string
+    ) => {
+      const sender = Number(senderId);
+      const receiver = Number(receiverId);
+
+      const delivered = onlineUsers.has(receiverId);
+
+      const newMessage = await ChatMessage.create({
+        senderId: sender,
+        receiverId: receiver,
+        message,
+        delivered,
+      });
+
+      const receiverSocketId = onlineUsers.get(receiverId);
+
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("receive-message", newMessage);
+      }
+
+      return newMessage;
+    };
+
+    /* =================================================
+       ADMIN SEND MESSAGE
     ================================================== */
     socket.on(
       "admin-send-message",
@@ -175,20 +341,7 @@ export const initChatSocket = (io: Server) => {
         message: string;
       }) => {
         try {
-          const delivered = onlineUsers.has(receiverId);
-
-          const newMessage = await ChatMessage.create({
-            senderId,
-            receiverId,
-            message,
-            delivered,
-          });
-
-          const receiverSocketId = onlineUsers.get(receiverId);
-
-          if (receiverSocketId) {
-            io.to(receiverSocketId).emit("receive-message", newMessage);
-          }
+          await handleMessage(senderId, receiverId, message);
         } catch (err) {
           console.error("Error admin-send-message:", err);
         }
@@ -196,7 +349,7 @@ export const initChatSocket = (io: Server) => {
     );
 
     /* =================================================
-       USER SEND MESSAGE (DB STORED)
+       USER SEND MESSAGE
     ================================================== */
     socket.on(
       "send-message",
@@ -210,20 +363,7 @@ export const initChatSocket = (io: Server) => {
         message: string;
       }) => {
         try {
-          const delivered = onlineUsers.has(receiverId);
-
-          const newMessage = await ChatMessage.create({
-            senderId,
-            receiverId,
-            message,
-            delivered,
-          });
-
-          const receiverSocketId = onlineUsers.get(receiverId);
-
-          if (receiverSocketId) {
-            io.to(receiverSocketId).emit("receive-message", newMessage);
-          }
+          await handleMessage(senderId, receiverId, message);
         } catch (err) {
           console.error("Error send-message:", err);
         }
