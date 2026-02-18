@@ -20,13 +20,9 @@ const userrole_model_1 = require("../models/userrole.model");
 const signup_model_1 = require("../models/signup.model");
 dotenv_1.default.config();
 console.log("DB NAME:", process.env.DB_NAME);
-exports.sequelize = new sequelize_typescript_1.Sequelize({
-    dialect: 'postgres',
-    host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT),
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+exports.sequelize = new sequelize_typescript_1.Sequelize(process.env.DATABASE_URL, {
+    dialect: "postgres",
+    protocol: "postgres",
     models: [
         login_model_1.Login,
         role_model_1.default,
@@ -42,11 +38,16 @@ exports.sequelize = new sequelize_typescript_1.Sequelize({
         signup_model_1.Signup,
     ],
     logging: false,
-    // ✅ pool must be INSIDE this object
+    dialectOptions: {
+        ssl: {
+            require: true,
+            rejectUnauthorized: false,
+        },
+    },
     pool: {
         max: 5,
         min: 0,
         acquire: 30000,
-        idle: 10000, // idle time before release
+        idle: 10000,
     },
 });

@@ -16,36 +16,41 @@ import { Signup } from '../models/signup.model';
 dotenv.config();
 console.log("DB NAME:", process.env.DB_NAME);
 
-export const sequelize = new Sequelize({
-  dialect: 'postgres',
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  username: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+export const sequelize = new Sequelize(
+  process.env.DATABASE_URL as string,
+  {
+    dialect: "postgres",
+    protocol: "postgres",
 
-  models: [
-    Login,
-    Role,
-    User,
-    Sprint,
-    Ticket,
-    Team,
-    TeamUser,
-    Project,
-    ChildTicket,
-    TeamLead,
-    UserRole,
-    Signup,
-  ],
+    models: [
+      Login,
+      Role,
+      User,
+      Sprint,
+      Ticket,
+      Team,
+      TeamUser,
+      Project,
+      ChildTicket,
+      TeamLead,
+      UserRole,
+      Signup,
+    ],
 
-  logging: false,
+    logging: false,
 
-  // ✅ pool must be INSIDE this object
-  pool: {
-    max: 5,        // max connections
-    min: 0,        // min connections
-    acquire: 30000,// time to try getting connection
-    idle: 10000,   // idle time before release
-  },
-});
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
+
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
+  }
+);
